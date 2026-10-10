@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tidewell Flask – Custom Engraved Bottle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-tier="free">
+  <header class="topbar">
+    <a class="brand" href="#product">Tidewell</a>
+    <nav aria-label="Sections">
+      <a href="#product">Product</a>
+      <a href="#video">Film</a>
+      <a href="#premium">Premium</a>
+    </nav>
+    <button type="button" id="themeToggle" class="theme-toggle" aria-label="Switch light or dark theme">🌙</button>
+    <div class="status" id="statusPill" aria-live="polite">
+      <svg id="premiumBadge" viewBox="0 0 40 40" width="26" height="26" role="img" aria-label="Premium badge">
+        <polygon class="badge-shape" points="20,3 25,14 37,15 28,23 31,35 20,29 9,35 12,23 3,15 15,14"/>
+      </svg>
+      <span id="statusText">Free User</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h2>Make it yours in under a minute</h2>
+      <ol class="steps">
+        <li>Pick a color and cap</li>
+        <li>Engrave a name</li>
+        <li>Sync or save your design</li>
+      </ol>
+
+      <!-- API Integration Controls -->
+      <div class="api-toolbar">
+        <button type="button" id="fetchExternalApiBtn" class="btn primary">Fetch External Product Info (Public API)</button>
+        <button type="button" id="fetchBackendDataBtn" class="btn ghost">Fetch Local Backend Catalog (GET)</button>
+        <span id="apiLoadingIndicator" class="api-indicator" style="display:none;">Loading...</span>
+      </div>
+      <div id="apiStatusBanner" class="api-status-banner" style="display:none;"></div>
+    </section>
+
+    <section id="product" class="section">
+      <div class="stage">
+        <article id="productCard" class="product-card" draggable="true" aria-label="Product card, draggable to cart">
+          <div id="preview" class="preview">
+            <div id="tilt" class="tilt">
+              <svg id="bottleSvg" viewBox="0 0 200 400" aria-label="Bottle preview">
+                <defs>
+                  <linearGradient id="bodyGrad" x1="0" x2="1">
+                    <stop offset="0" style="stop-color:var(--c2)"/>
+                    <stop offset=".45" style="stop-color:var(--c1)"/>
+                    <stop offset="1" style="stop-color:var(--c2)"/>
+                  </linearGradient>
+                  <linearGradient id="shineGrad" x1="0" x2="1">
+                    <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+                    <stop offset=".5" stop-color="#fff" stop-opacity=".7"/>
+                    <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <rect id="cap" data-part="Cap" x="72" y="8" width="56" height="42" rx="9"/>
+                <rect data-part="Neck" x="82" y="48" width="36" height="12" fill="#0f2a2e" opacity=".5"/>
+                <rect id="bottleBody" data-part="Body" x="48" y="58" width="104" height="290" rx="30" fill="url(#bodyGrad)"/>
+                <rect id="gloss" x="60" y="70" width="14" height="260" rx="7" fill="#fff"/>
+                <rect id="shine" x="48" y="58" width="104" height="290" rx="30" fill="url(#shineGrad)"/>
+                <text id="engravingText" data-part="Engraving" text-anchor="middle" transform="rotate(-90 100 200)" x="100" y="205"></text>
+              </svg>
+            </div>
+            <div class="glare"></div>
+            <span id="hoverTag" class="hover-tag">Move over the bottle</span>
+          </div>
+          <div class="info">
+            <h1 id="productName">Tidewell Flask</h1>
+            <p class="category-badge" id="productCategory" style="display:none;"></p>
+            <p class="price" id="productPrice">$35.00</p>
+            <p id="productDescription" class="description">Double-wall stainless steel keeps drinks cold for 24 hours or hot for 12. Powder-coated body, leak-proof cap, and a laser-engraved name that never wears off.</p>
+          </div>
+          <p class="drag-hint">Drag this card into the cart</p>
+        </article>
+
+        <aside id="cartZone" class="cart-zone" aria-live="polite">
+          <h2>Your cart</h2>
+          <p id="cartEmpty">Drop your flask here.</p>
+          <ul id="cartList"></ul>
+          <p class="cart-total">Items: <strong id="cartCount">0</strong> &nbsp; Total: <strong id="cartTotal">$0.00</strong></p>
+        </aside>
+      </div>
+
+      <form id="customForm" class="panel" novalidate>
+        <h2>Customize <span class="tag free">Free</span></h2>
+        <fieldset>
+          <legend>Color</legend>
+          <div class="swatches" id="freeColors">
+            <button type="button" class="swatch" data-color="ocean" aria-pressed="true" title="Ocean"></button>
+            <button type="button" class="swatch" data-color="slate" aria-pressed="false" title="Slate"></button>
+            <button type="button" class="swatch" data-color="sand" aria-pressed="false" title="Sand"></button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Cap color</legend>
+          <div class="swatches" id="capColors">
+            <button type="button" class="swatch" data-cap="graphite" aria-pressed="true" title="Graphite"></button>
+            <button type="button" class="swatch" data-cap="brass" aria-pressed="false" title="Brass"></button>
+            <button type="button" class="swatch" data-cap="pearl" aria-pressed="false" title="Pearl"></button>
+          </div>
+        </fieldset>
+        <label>Size
+          <select id="variantSelect">
+            <option value="small">500 ml (+$0)</option>
+            <option value="medium" selected>750 ml (+$6)</option>
+            <option value="large">1 L (+$12)</option>
+          </select>
+        </label>
+        <fieldset>
+          <legend>Finish</legend>
+          <label class="inline"><input type="radio" name="finish" value="matte" checked> Matte</label>
+          <label class="inline"><input type="radio" name="finish" value="glossy"> Glossy</label>
+        </fieldset>
+        <label>Engraving name
+          <input id="engravingInput" type="text" maxlength="18" autocomplete="off" placeholder="e.g. Ayesha" required>
+        </label>
+        <div class="chips" id="nameChips" aria-label="Name ideas">
+          <button type="button" class="chip" data-name="Ayesha">Ayesha</button>
+          <button type="button" class="chip" data-name="Adventure">Adventure</button>
+          <button type="button" class="chip" data-name="Stay Hydrated">Stay Hydrated</button>
+        </div>
+        <label>Engraving font
+          <select id="fontSelect">
+            <option value="sans">Bold sans</option>
+            <option value="serif">Classic serif</option>
+            <option value="mono">Typewriter</option>
+          </select>
+        </label>
+        <p class="counter" id="engravingCounter">0 / 18</p>
+        <p class="error" id="engravingError" role="alert"></p>
+        
+        <div class="actions">
+          <button type="submit" class="btn primary">Add to cart</button>
+          <button type="button" id="submitBackendBtn" class="btn primary" style="background:#0e6251;">Send Config to Backend (POST)</button>
+          <button type="button" id="spinBtn" class="btn gold">Spin 360°</button>
+          <button type="reset" class="btn ghost">Reset design</button>
+        </div>
+        <p class="message" id="formMessage" role="status"></p>
+      </form>
+    </section>
+
+    <section id="video" class="section">
+      <h2>See it made</h2>
+      <div class="video-wrap">
+        <video id="adVideo" controls preload="metadata" playsinline>
+          <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+          Your browser does not support video.
+        </video>
+      </div>
+      <p class="muted">Every Tidewell flask is engraved in our studio and ships within two days.</p>
+    </section>
+
+    <section id="premium" class="section premium-section">
+      <h2>Premium studio <span class="tag gold">Premium</span></h2>
+      <p class="muted">Free users can preview what is inside. Upgrade once to unlock everything below.</p>
+      <div class="lock-message" id="lockMessage" role="alert" style="display:none;">
+        <span id="lockText">This feature is premium only.</span>
+        <button type="button" class="btn gold" data-open-pay>Upgrade to premium</button>
+      </div>
+      <div class="premium-grid">
+        <fieldset>
+          <legend>Premium colors &amp; themes</legend>
+          <div class="swatches" id="premiumColors">
+            <button type="button" class="swatch premium-option" data-color="aurora" title="Aurora theme" aria-pressed="false"></button>
+            <button type="button" class="swatch premium-option" data-color="gold" title="Gold" aria-pressed="false"></button>
+            <button type="button" class="swatch premium-option" data-color="rose" title="Rose copper" aria-pressed="false"></button>
+          </div>
+        </fieldset>
+        <label class="premium-option toggle"><input type="checkbox" id="foilToggle"> Gold foil engraving</label>
+        <label class="premium-option toggle"><input type="checkbox" id="shimmerToggle"> Shimmer effect</label>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn gold" data-open-pay id="upgradeBtn">Upgrade for $9.99</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <button type="button" id="resetAll" class="btn ghost">Reset demo</button>
+    <span class="muted">Demo only. No real payment is taken or stored.</span>
+  </footer>
+
+  <dialog id="payDialog">
+    <div id="payView">
+      <button type="button" class="close" id="closePay" aria-label="Close">&times;</button>
+      <h2>Tidewell Premium</h2>
+      <p class="price">$9.99 <small>one-time</small></p>
+      <ul class="feature-list">
+        <li>Aurora, Gold and Rose copper themes</li>
+        <li>Gold foil engraving</li>
+        <li>Shimmer effect</li>
+      </ul>
+      <form id="payForm" novalidate>
+        <label>Cardholder name
+          <input id="cardName" autocomplete="off" placeholder="Name on card">
+          <span class="error" data-error-for="cardName"></span>
+        </label>
+        <label>Card number
+          <input id="cardNumber" inputmode="numeric" autocomplete="off" placeholder="1234 5678 9012 3456" maxlength="19">
+          <span class="error" data-error-for="cardNumber"></span>
+        </label>
+        <div class="row">
+          <label>Expiry
+            <input id="cardExpiry" inputmode="numeric" autocomplete="off" placeholder="MM/YY" maxlength="5">
+            <span class="error" data-error-for="cardExpiry"></span>
+          </label>
+          <label>CVV
+            <input id="cardCvv" inputmode="numeric" autocomplete="off" placeholder="123" maxlength="4" type="password">
+            <span class="error" data-error-for="cardCvv"></span>
+          </label>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn gold">Upgrade now</button>
+          <button type="reset" class="btn ghost">Clear</button>
+        </div>
+        <p class="muted small">Use test numbers. Nothing is processed externally.</p>
+      </form>
+    </div>
+    <div id="processingView" class="center" style="display:none;">
+      <div class="spinner"></div>
+      <p>Processing payment…</p>
+    </div>
+    <div id="successView" class="center" style="display:none;">
+      <div id="lottieBox" class="lottie-box"></div>
+      <h2>You are Premium!</h2>
+      <p>Premium features are now unlocked.</p>
+      <button type="button" class="btn primary" id="doneBtn">Start customizing</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- jQuery CDN -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Lottie -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+  <!-- Main Script -->
+  <script src="script.js"></script>
+</body>
+</html>
